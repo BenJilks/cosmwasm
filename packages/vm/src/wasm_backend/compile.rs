@@ -18,6 +18,19 @@ pub fn compile(
 ) -> VmResult<Module> {
     let store = make_compile_time_store(memory_limit, middlewares);
     let module = Module::new(&store, code)?;
+    
+    #[cfg(feature = "universal")]
+    {
+        let deterministic = Arc::new(Gatekeeper::default());
+        let metering = Arc::new(Metering::new(gas_limit, cost));
+
+        for middleware in middlewars {
+            middleware.transform_module_info(module);
+        }
+        deterministic.transform_module_info(module);
+        metering.transform_module_info(module);
+    }
+
     Ok(module)
 }
 

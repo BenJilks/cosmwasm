@@ -1,7 +1,7 @@
 use std::sync::Arc;
 #[cfg(feature = "cranelift")]
 use wasmer::Cranelift;
-#[cfg(not(feature = "cranelift"))]
+#[cfg(feature = "singlepass")]
 use wasmer::Singlepass;
 use wasmer::{
     wasmparser::Operator, BaseTunables, CompilerConfig, Engine, ModuleMiddleware, Pages, Store,
@@ -52,7 +52,7 @@ pub fn make_compile_time_store(
         make_store_with_engine(&engine, memory_limit)
     }
 
-    #[cfg(not(feature = "cranelift"))]
+    #[cfg(feature = "singlepass")]
     {
         let mut config = Singlepass::default();
         for middleware in middlewares {
@@ -61,6 +61,12 @@ pub fn make_compile_time_store(
         config.push_middleware(deterministic);
         config.push_middleware(metering);
         let engine = Universal::new(config).engine();
+        make_store_with_engine(&engine, memory_limit)
+    }
+
+    #[cfg(feature = "universal")]
+    {
+        let engine = Universal::headless().engine();
         make_store_with_engine(&engine, memory_limit)
     }
 }
